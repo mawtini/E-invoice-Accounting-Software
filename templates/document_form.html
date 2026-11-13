@@ -1,0 +1,63 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block content %}
+<h1>{{ codes.DOC_TYPES[doc.doc_type] }} {{ doc.number }}</h1>
+{% if self_billed %}<div class="note">Self-billed: you (the buyer) issue the e-Invoice on behalf of the supplier — e.g. foreign
+suppliers, individuals not in business, agents/dealers. The supplier below appears as <b>AccountingSupplierParty</b>.</div>{% endif %}
+<form method="post" class="card">
+<input type="hidden" name="doc_type" value="{{ doc.doc_type }}">
+<div class="grid">
+{{ field('number', 'Document no. (internal ID)', doc.number, required=True) }}
+{{ field('issue_date', 'Date', doc.issue_date, type='date', required=True) }}
+<div><label>{{ 'Supplier' if self_billed else 'Buyer' }} *</label>
+<select name="party_id" required>{% for p in parties %}<option value="{{ p.id }}" {% if p.id == doc.party_id %}selected{% endif %}>{{ p.name }} ({{ p.tin }})</option>{% endfor %}</select>
+<a class="muted" href="{{ url_for('party_form', next=request.full_path) }}">+ new party</a></div>
+{% if doc.doc_type in codes.ADJUSTMENT_TYPES %}
+<div><label>Original document *</label><select name="ref_doc_id" required>{% for r in refs %}
+<option value="{{ r.id }}" {% if r.id == doc.ref_doc_id %}selected{% endif %}>{{ r.number }}</option>{% endfor %}</select></div>
+{% endif %}
+{{ field('currency', 'Currency', doc.currency, options=codes.CURRENCIES|map('string')|zip_self) }}
+{{ field('exchange_rate', 'Exchange rate to MYR', doc.exchange_rate, type='number') }}
+{{ field('payment_mode', 'Payment mode', doc.payment_mode, options=[('', '-')] + (codes.PAYMENT_MODES|kv)) }}
+{{ field('payment_terms', 'Payment terms', doc.payment_terms) }}
+{{ field('period_start', 'Billing period start', doc.period_start, type='date') }}
+{{ field('period_end', 'Billing period end', doc.period_end, type='date') }}
+{{ field('period_desc', 'Frequency', doc.period_desc, options=[('', '-'),('Daily','Daily'),('Weekly','Weekly'),('Monthly','Monthly'),('Quarterly','Quarterly'),('Annually','Annually'),('Others','Others')]) }}
+{{ field('notes', 'Internal notes', doc.notes, cls='wide') }}
+</div>
+<h2>Line items</h2>
+<table class="lines" id="lines"><tr><th style="width:24%">Description</th><th>Classification</th><th style="width:70px">Qty</th><th>Unit</th>
+<th style="width:100px">Unit price</th><th style="width:80px">Discount</th><th>Tax type</th><th style="width:65px">Tax %</th>
+<th>{{ 'Expense' if self_billed else 'Revenue' }} a/c</th><th class="n">Amount</th><th></th></tr>
+{% for ln in lines %}
+<tr class="ln">
+<td><input name="line_description" value="{{ ln.description or '' }}"><input name="line_exemption_reason" value="{{ ln.exemption_reason or '' }}" placeholder="exemption reason (tax type E)" style="margin-top:3px;font-size:11px"></td>
+<td><select name="line_classification">{% for k, v in codes.CLASSIFICATIONS.items() %}<option value="{{ k }}" {% if k == (ln.classification or ('036' if self_billed else '022')) %}selected{% endif %}>{{ k }} {{ v[:38] }}</option>{% endfor %}</select></td>
+<td><input name="line_qty" type="number" step="any" value="{{ ln.qty or 1 }}"></td>
+<td><select name="line_unit_code">{% for k, v in codes.UNITS.items() %}<option value="{{ k }}" {% if k == (ln.unit_code or 'C62') %}selected{% endif %}>{{ k }}</option>{% endfor %}</select></td>
+<td><input name="line_unit_price" type="number" step="any" value="{{ ln.unit_price or 0 }}"></td>
+<td><input name="line_discount" type="number" step="any" value="{{ ln.discount or 0 }}"></td>
+<td><select name="line_tax_type">{% for k, v in codes.TAX_TYPES.items() %}<option value="{{ k }}" {% if k == (ln.tax_type or '06') %}selected{% endif %}>{{ k }} {{ v }}</option>{% endfor %}</select></td>
+<td><input name="line_tax_rate" type="number" step="any" value="{{ ln.tax_rate or 0 }}"></td>
+<td><select name="line_account_code">{% for a in accounts if (a.type == ('expense' if self_billed else 'income')) %}<option value="{{ a.code }}" {% if a.code == ln.account_code %}selected{% endif %}>{{ a.code }} {{ a.name }}</option>{% endfor %}</select></td>
+<td class="n amt">0.00</td><td><button type="button" class="btn sec sm" onclick="delRow(this)">✕</button></td></tr>
+{% endfor %}
+<tfoot><tr><td colspan="9" class="n">Subtotal<br>Tax<br>Total</td><td class="n" id="tot">-</td><td></td></tr></tfoot>
+</table>
+<div class="actions"><button type="button" class="btn sec sm" onclick="addRow()">+ Add line</button>
+<span class="muted">Sales tax 5% / 10%; service tax 8% (6% for F&amp;B, telco, parking, logistics).</span></div>
+<div class="actions"><button class="btn">Save draft</button><a class="btn sec" href="{{ url_for('documents') }}">Cancel</a></div>
+</form>
+<script>
+const tbl=document.getElementById('lines');
+function rows(){return [...tbl.querySelectorAll('tr.ln')]}
+function num(r,n){return parseFloat(r.querySelector(`[name=${n}]`).value)||0}
+function recalc(){let s=0,t=0;rows().forEach(r=>{const net=Math.round((num(r,'line_qty')*num(r,'line_unit_price')-num(r,'line_discount'))*100)/100;
+const tt=r.querySelector('[name=line_tax_type]').value;const tax=(tt==='06'||tt==='E')?0:Math.round(net*num(r,'line_tax_rate'))/100;
+r.querySelector('.amt').textContent=(net+tax).toFixed(2);s+=net;t+=tax});
+document.getElementById('tot').innerHTML=s.toFixed(2)+'<br>'+t.toFixed(2)+'<br><b>'+(s+t).toFixed(2)+'</b>'}
+function addRow(){const r=rows()[0].cloneNode(true);r.querySelectorAll('input').forEach(i=>i.value=i.name==='line_qty'?1:(i.type==='number'?0:''));
+rows().at(-1).after(r);recalc()}
+function delRow(b){if(rows().length>1){b.closest('tr').remove();recalc()}}
+tbl.addEventListener('input',recalc);recalc();
+</script>
+{% endblock %}

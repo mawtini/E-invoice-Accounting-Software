@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% from "_macros.html" import post %}
+{% block content %}
+<h1>Customers &amp; Suppliers</h1>
+<div class="actions"><a class="btn" href="{{ url_for('party_form') }}">+ New party</a></div>
+<table><tr><th>Name</th><th>Kind</th><th>TIN</th><th>ID</th><th>SST</th><th>State</th><th>TIN check</th><th></th></tr>
+{% for p in rows %}<tr><td><a href="{{ url_for('party_form', pid=p.id) }}">{{ p.name }}</a></td><td>{{ p.kind }}</td>
+<td class="mono">{{ p.tin }}{% if p.tin in codes.GENERIC_TIN %} <span class="badge">generic</span>{% endif %}</td>
+<td>{{ p.id_type }} {{ p.id_value }}</td><td>{{ p.sst_no }}</td><td>{{ codes.STATES.get(p.state_code, p.state_code) }}</td>
+<td>{% if p.tin_verified == 1 %}<span class="badge valid">valid</span>{% elif p.tin_verified == -1 %}<span class="badge invalid">failed</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+<td>{{ post(url_for('party_validate', pid=p.id), 'Validate TIN') }}</td></tr>{% endfor %}</table>
+{% endblock %}

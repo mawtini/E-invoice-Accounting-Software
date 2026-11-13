@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% from "_macros.html" import status %}
+{% block content %}
+<h1>{{ 'Self-billed e-Invoices' if kind=='self' else 'Sales e-Invoices' }}</h1>
+<div class="tabs"><a href="{{ url_for('documents') }}" class="{{ 'on' if kind!='self' }}">Sales (issued to customers)</a>
+<a href="{{ url_for('documents', kind='self') }}" class="{{ 'on' if kind=='self' }}">Self-billed (on behalf of suppliers)</a></div>
+<div class="actions">
+{% if kind=='self' %}<a class="btn" href="{{ url_for('document_form', type='11') }}">+ Self-billed invoice</a>
+{% else %}<a class="btn" href="{{ url_for('document_form', type='01') }}">+ Invoice</a>{% endif %}
+<span class="muted">Credit / debit / refund notes are created from a validated invoice.</span></div>
+<form method="post" action="{{ url_for('document_submit_batch') }}">
+<table><tr><th></th><th>No.</th><th>Type</th><th>Party</th><th>Date</th><th class="n">Total</th><th>Status</th><th>LHDN UUID</th></tr>
+{% for d in rows %}<tr><td>{% if d.status in ('draft','invalid') %}<input type="checkbox" name="ids" value="{{ d.id }}" style="width:auto">{% endif %}</td>
+<td><a href="{{ url_for('document_view', did=d.id) }}">{{ d.number }}</a>{% if d.is_consolidated %} <span class="badge">consolidated</span>{% endif %}</td>
+<td>{{ codes.DOC_TYPES[d.doc_type] }}</td><td>{{ d.party }}</td><td>{{ d.issue_date }}</td>
+<td class="n">{{ d.currency }} {{ d.total|money }}</td><td>{{ status(d.status) }}{% if d.paid %} <span class="badge paid">paid</span>{% endif %}</td>
+<td class="mono">{{ d.lhdn_uuid or '' }}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">No documents</td></tr>{% endfor %}</table>
+<div class="actions"><button class="btn sec">Submit selected to LHDN (batch, max 100)</button></div>
+</form>
+{% endblock %}

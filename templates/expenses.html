@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% from "_macros.html" import status, post %}
+{% block content %}
+<h1>Expenditure</h1>
+<div class="actions"><a class="btn" href="{{ url_for('expense_form') }}">+ Record expense</a>
+<a class="btn sec" href="{{ url_for('lhdn_tools', received=1) }}">Import from received e-Invoices</a>
+<a class="btn sec" href="{{ url_for('documents', kind='self') }}">Self-billed e-Invoices</a></div>
+<table><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Account</th><th class="n">Total</th><th>Paid</th><th>e-Invoice</th><th></th></tr>
+{% for e in rows %}<tr><td>{{ e.date }}</td><td>{{ e.party or '-' }}</td><td><a href="{{ url_for('expense_form', eid=e.id) }}">{{ e.description }}</a></td>
+<td>{{ e.account_code }}</td><td class="n">{{ e.total|money }}</td>
+<td>{% if e.paid %}<span class="badge paid">paid</span>{% else %}{{ post(url_for('expense_paid', eid=e.id), 'Mark paid') }}{% endif %}</td>
+<td>{% if e.einvoice_source == 'self_billed' %}{% if e.sb_number %}self-billed <a href="{{ url_for('document_view', did=e.self_billed_doc_id) }}">{{ e.sb_number }}</a> {{ status(e.sb_status) }}{% endif %}
+{% elif e.einvoice_source == 'supplier' %}{% if e.supplier_einvoice_uuid %}<span class="mono">{{ e.supplier_einvoice_uuid[:12] }}…</span> {% if e.supplier_einvoice_status %}{{ status(e.supplier_einvoice_status) }}{% endif %}{% else %}<span class="muted">awaiting supplier e-Invoice</span>{% endif %}
+{% else %}<span class="muted">not required</span>{% endif %}</td>
+<td>{% if e.einvoice_source == 'supplier' and e.supplier_einvoice_uuid %}{{ post(url_for('expense_verify', eid=e.id), 'Verify on MyInvois') }}{% endif %}
+{% if e.einvoice_source == 'self_billed' and not e.self_billed_doc_id %}{{ post(url_for('expense_self_bill', eid=e.id), 'Create self-billed') }}{% endif %}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">No expenses</td></tr>{% endfor %}</table>
+{% endblock %}

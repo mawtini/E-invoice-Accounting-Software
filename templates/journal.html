@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>General journal</h1>
+<div class="tabs"><a href="{{ url_for('reports') }}">Reports</a><a href="{{ url_for('journal') }}" class="on">Journal</a></div>
+<table><tr><th>Date</th><th>Ref</th><th>Description</th><th>Account</th><th class="n">Debit</th><th class="n">Credit</th></tr>
+{% for e in entries %}{% for l in lines.get(e.id, []) %}<tr>
+{% if loop.first %}<td rowspan="{{ loop.length }}">{{ e.date }}</td><td rowspan="{{ loop.length }}">{{ e.ref }}</td><td rowspan="{{ loop.length }}">{{ e.description }}</td>{% endif %}
+<td>{{ l.account_code }} {{ l.name }}</td><td class="n">{{ l.debit|money if l.debit }}</td><td class="n">{{ l.credit|money if l.credit }}</td></tr>
+{% endfor %}{% else %}<tr><td colspan="6" class="muted">No entries</td></tr>{% endfor %}</table>
+{% endblock %}

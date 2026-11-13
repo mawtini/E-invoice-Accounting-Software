@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% from "_macros.html" import field, status %}
+{% block content %}
+<h1>Payroll</h1>
+<div class="note">Employment income is exempt from e-Invoicing. Payroll is posted to the ledger with EPF, SOCSO, EIS and PCB liabilities.</div>
+<form method="post" class="card"><div class="grid">{{ field('period', 'Period', default_period, type='month', required=True) }}
+{{ field('pay_date', 'Pay date', today, type='date', required=True) }}<div><label>&nbsp;</label><button class="btn">Create payroll run</button></div></div></form>
+<table><tr><th>Period</th><th>Pay date</th><th>Employees</th><th class="n">Gross</th><th class="n">Net</th><th>Status</th></tr>
+{% for r in runs %}<tr><td><a href="{{ url_for('payroll_run', rid=r.id) }}">{{ r.period }}</a></td><td>{{ r.pay_date }}</td><td>{{ r.n }}</td>
+<td class="n">{{ r.gross|money }}</td><td class="n">{{ r.net|money }}</td><td>{{ status(r.status) }}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">No payroll runs</td></tr>{% endfor %}</table>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block content %}
+<h1>{{ 'Edit' if row.id else 'Record' }} expense</h1>
+<form method="post" class="card"><div class="grid">
+{{ field('date', 'Date', row.date, type='date', required=True) }}
+<div><label>Supplier</label><select name="party_id"><option value="">-</option>{% for p in parties %}
+<option value="{{ p.id }}" {% if p.id == row.party_id %}selected{% endif %}>{{ p.name }} ({{ p.tin }})</option>{% endfor %}</select>
+<a class="muted" href="{{ url_for('party_form', next=request.full_path) }}">+ new supplier</a></div>
+<div><label>Expense account *</label><select name="account_code">{% for a in accounts %}<option value="{{ a.code }}" {% if a.code == row.account_code %}selected{% endif %}>{{ a.code }} {{ a.name }}</option>{% endfor %}</select></div>
+{{ field('description', 'Description', row.description, required=True, cls='wide') }}
+{{ field('amount', 'Amount excl. tax (MYR)', row.amount, type='number', required=True) }}
+{{ field('tax_type', 'Tax type', row.tax_type, options=codes.TAX_TYPES|kv) }}
+{{ field('tax_rate', 'Tax %', row.tax_rate or 0, type='number') }}
+{{ field('tax', 'Tax amount (blank = compute)', row.tax, type='number') }}
+<div><label>Paid?</label><input type="checkbox" name="paid" value="1" {% if row.paid %}checked{% endif %} style="width:auto"> paid from bank (else Accounts Payable)</div>
+</div>
+<h2>e-Invoice</h2>
+<div class="grid">
+{{ field('einvoice_source', 'e-Invoice source', row.einvoice_source, options=[('supplier','Supplier issues e-Invoice to us'),('self_billed','We issue a self-billed e-Invoice'),('none','Not required (e.g. statutory payments)')]) }}
+{{ field('supplier_einvoice_uuid', "Supplier's e-Invoice UUID", row.supplier_einvoice_uuid) }}
+<div><label>Classification (for self-billed)</label><select name="classification">{% for k, v in codes.CLASSIFICATIONS.items() %}
+<option value="{{ k }}" {% if k == row.classification %}selected{% endif %}>{{ k }} {{ v[:60] }}</option>{% endfor %}</select></div>
+</div>
+<p class="muted">Self-bill for: foreign suppliers (034 goods / 035 services import), individuals not in business (036),
+agent/dealer commissions (037), betting &amp; gaming winnings (033). Use the supplier's generic TIN EI00000000030 for foreign suppliers.</p>
+<div class="actions"><button class="btn">Save &amp; post</button><a class="btn sec" href="{{ url_for('expenses') }}">Cancel</a></div>
+</form>
+{% endblock %}

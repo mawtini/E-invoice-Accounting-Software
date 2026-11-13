@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block content %}
+<h1>{{ 'Edit' if row.id else 'New' }} employee</h1>
+<form method="post" class="card"><div class="grid">
+{{ field('emp_no', 'Employee no.', row.emp_no, required=True) }}{{ field('name', 'Full name', row.name, required=True) }}
+{{ field('nric', 'NRIC / Passport', row.nric) }}{{ field('dob', 'Date of birth (if not derivable from NRIC)', row.dob, type='date') }}
+{{ field('residency', 'Residency', row.residency, options=[('citizen','Malaysian citizen'),('pr','Permanent resident'),('foreign','Foreign worker')]) }}
+{{ field('epf_no', 'EPF member no.', row.epf_no) }}{{ field('socso_no', 'SOCSO no.', row.socso_no) }}{{ field('tax_no', 'Income tax no. (TIN)', row.tax_no) }}
+{{ field('basic_salary', 'Basic salary (RM/month)', row.basic_salary, type='number', required=True) }}
+{{ field('fixed_allowance', 'Fixed allowance', row.fixed_allowance or 0, type='number') }}
+{{ field('pcb_monthly', 'PCB / MTD per month', row.pcb_monthly or 0, type='number') }}
+{{ field('bank_name', 'Bank', row.bank_name) }}{{ field('bank_account', 'Account no.', row.bank_account) }}
+<div><label>Active</label><input type="checkbox" name="active" value="1" {% if row.active %}checked{% endif %} style="width:auto"></div>
+</div>
+<p class="muted">PCB/MTD: compute with LHDN's e-PCB calculator and enter the monthly amount. EPF, SOCSO and EIS are computed automatically.</p>
+<div class="actions"><button class="btn">Save</button><a class="btn sec" href="{{ url_for('employees') }}">Cancel</a></div></form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% from "_macros.html" import field, post, status %}
+{% block content %}
+<h1>MyInvois tools</h1>
+<div class="split">
+<form method="post" action="{{ url_for('lhdn_validate_tin') }}" class="card"><h2 style="margin-top:0">Validate taxpayer TIN</h2><div class="grid">
+{{ field('tin', 'TIN', '', required=True) }}{{ field('id_type', 'ID type', 'BRN', options=codes.ID_TYPES|kv) }}{{ field('id_value', 'ID value', '', required=True) }}
+</div><div class="actions"><button class="btn">Validate</button></div></form>
+<div class="card"><h2 style="margin-top:0">Connection</h2>
+<p>Mode <b>{{ settings.lhdn_mode }}</b> · document version <b>{{ settings.lhdn_doc_version }}</b>{% if settings.lhdn_onbehalfof %} · intermediary for {{ settings.lhdn_onbehalfof }}{% endif %}</p>
+<div class="actions">{{ post(url_for('lhdn_test_login'), 'Test login', 'btn') }}
+{% if settings.lhdn_mode == 'mock' %}{{ post(url_for('lhdn_simulate_received'), 'Simulate a supplier e-Invoice to us') }}{% endif %}</div></div>
+</div>
+<h2>Received e-Invoices (issued to our TIN)</h2>
+<div class="actions"><a class="btn sec" href="{{ url_for('lhdn_tools', received=1) }}">Fetch recent received documents</a></div>
+{% if err %}<div class="flash error">{{ err }}</div>{% endif %}
+{% if received %}<table><tr><th>Internal ID</th><th>Issuer TIN</th><th>Received</th><th class="n">Total</th><th>Status</th><th>UUID</th><th></th></tr>
+{% for d in received %}<tr><td>{{ d.internalId }}</td><td>{{ d.issuerTin }}</td><td>{{ d.dateTimeReceived }}</td><td class="n">{{ d.totalPayableAmount|money }}</td>
+<td>{{ status(d.status) }}</td><td class="mono">{{ d.uuid }}</td><td><a class="btn sec sm" href="{{ url_for('lhdn_import', uuid=d.uuid) }}">Import as expense</a></td></tr>{% endfor %}</table>
+{% elif request.args.received %}<p class="muted">No received documents.</p>{% endif %}
+<h2>API log (last 50)</h2>
+<table><tr><th>Time (UTC)</th><th>Mode</th><th>Request</th><th>Status</th><th>Detail</th></tr>
+{% for l in log %}<tr><td>{{ l.ts }}</td><td>{{ l.mode }}</td><td class="mono">{{ l.method }} {{ l.url }}</td><td>{{ l.status }}</td>
+<td><details><summary>show</summary><div class="mono">Request: {{ l.request }}</div><pre>{{ l.response }}</pre></details></td></tr>
+{% else %}<tr><td colspan="5" class="muted">No calls yet</td></tr>{% endfor %}</table>
+{% endblock %}

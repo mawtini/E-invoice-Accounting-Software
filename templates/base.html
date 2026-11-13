@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}e-Invois Accounting{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body>
+{% set ep = request.endpoint or '' %}
+<header>
+  <div class="brand">e-Invois Accounting</div>
+  <nav>
+    <a href="{{ url_for('dashboard') }}" class="{{ 'on' if ep=='dashboard' }}">Dashboard</a>
+    <a href="{{ url_for('documents') }}" class="{{ 'on' if ep.startswith('document') }}">Sales e-Invoices</a>
+    <a href="{{ url_for('receipts') }}" class="{{ 'on' if ep.startswith('receipt') }}">B2C Receipts</a>
+    <a href="{{ url_for('expenses') }}" class="{{ 'on' if ep.startswith('expense') }}">Expenses</a>
+    <a href="{{ url_for('payroll_runs') }}" class="{{ 'on' if ep.startswith('payroll') or ep=='payslip' }}">Payroll</a>
+    <a href="{{ url_for('employees') }}" class="{{ 'on' if ep.startswith('employee') }}">Employees</a>
+    <a href="{{ url_for('parties') }}" class="{{ 'on' if ep.startswith('part') }}">Customers / Suppliers</a>
+    <a href="{{ url_for('reports') }}" class="{{ 'on' if ep in ('reports','journal') }}">Accounts</a>
+    <a href="{{ url_for('lhdn_tools') }}" class="{{ 'on' if ep.startswith('lhdn') }}">MyInvois</a>
+    <a href="{{ url_for('settings_page') }}" class="{{ 'on' if ep.startswith('settings') }}">Settings</a>
+  </nav>
+  <span class="mode {{ settings.lhdn_mode }}">LHDN: {{ settings.lhdn_mode }} · v{{ settings.lhdn_doc_version }}</span>
+</header>
+<main>
+{% for cat, msg in get_flashed_messages(with_categories=true) %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main>
+</body></html>

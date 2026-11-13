@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% from "_macros.html" import field, status %}
+{% block content %}
+<h1>B2C receipts &amp; consolidated e-Invoice</h1>
+<div class="note">Cash sales to buyers who did not ask for an e-Invoice are recorded here with a normal receipt, then
+aggregated into a monthly <b>consolidated e-Invoice</b> (classification 004, buyer "General Public", TIN EI00000000010),
+which must be submitted within 7 days after month end.</div>
+<div class="split">
+<form method="post" class="card"><h2 style="margin-top:0">Record receipt</h2><div class="grid">
+{{ field('number', 'Receipt no.', next_no, required=True) }}{{ field('date', 'Date', today, type='date', required=True) }}
+{{ field('description', 'Description', '', required=True, cls='wide') }}
+{{ field('amount', 'Amount excl. tax', '', type='number', required=True) }}
+{{ field('tax_type', 'Tax type', '06', options=codes.TAX_TYPES|kv) }}{{ field('tax_rate', 'Tax %', 0, type='number') }}
+{{ field('payment_mode', 'Payment mode', '01', options=codes.PAYMENT_MODES|kv) }}
+<div><label>Revenue account</label><select name="account_code">{% for a in accounts %}<option value="{{ a.code }}">{{ a.code }} {{ a.name }}</option>{% endfor %}</select></div>
+</div><div class="actions"><button class="btn">Save receipt</button></div></form>
+<form method="post" action="{{ url_for('receipts_consolidate') }}" class="card"><h2 style="margin-top:0">Consolidate a month</h2>
+{{ field('month', 'Month', today[:7], type='month', required=True) }}
+<div class="actions"><button class="btn">Create consolidated e-Invoice</button></div></form></div>
+<table><tr><th>Receipt</th><th>Date</th><th>Description</th><th class="n">Amount</th><th>Tax</th><th>Consolidated in</th></tr>
+{% for r in rows %}<tr><td>{{ r.number }}</td><td>{{ r.date }}</td><td>{{ r.description }}</td><td class="n">{{ r.amount|money }}</td>
+<td>{{ r.tax_type }} {{ r.tax_rate }}%</td><td>{% if r.cons_number %}<a href="{{ url_for('document_view', did=r.consolidated_doc_id) }}">{{ r.cons_number }}</a> {{ status(r.cons_status) }}{% else %}<span class="muted">pending</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">No receipts</td></tr>{% endfor %}</table>
+{% endblock %}

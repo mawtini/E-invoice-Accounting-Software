@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Accounts</h1>
+<div class="tabs"><a href="{{ url_for('reports') }}" class="on">Reports</a><a href="{{ url_for('journal') }}">Journal</a></div>
+<form class="actions"><label style="margin:0">From</label><input type="date" name="from" value="{{ d_from }}" style="width:auto">
+<label style="margin:0">To</label><input type="date" name="to" value="{{ d_to }}" style="width:auto"><button class="btn sec">Apply</button></form>
+<div class="split">
+<div><h2>Profit &amp; loss ({{ d_from }} – {{ d_to }})</h2>
+<table><tr><th>Income</th><th class="n">RM</th></tr>{% for a in income %}<tr><td>{{ a.code }} {{ a.name }}</td><td class="n">{{ (-a.balance)|money }}</td></tr>{% endfor %}
+<tr><td><b>Total income</b></td><td class="n"><b>{{ ti|money }}</b></td></tr>
+<tr><th>Expenses</th><th></th></tr>{% for a in expense %}<tr><td>{{ a.code }} {{ a.name }}</td><td class="n">{{ a.balance|money }}</td></tr>{% endfor %}
+<tr><td><b>Total expenses</b></td><td class="n"><b>{{ te|money }}</b></td></tr>
+<tfoot><tr><td>Net profit</td><td class="n">{{ (ti - te)|money }}</td></tr></tfoot></table>
+<p class="muted">SST charged in period (net, account 2100): RM {{ sst|money }} — for SST-02 return.</p></div>
+<div><h2>Trial balance (as at {{ d_to }})</h2>
+<table><tr><th>Account</th><th class="n">Debit</th><th class="n">Credit</th></tr>
+{% set ns = namespace(dr=0, cr=0) %}
+{% for a in tb if a.balance %}<tr><td>{{ a.code }} {{ a.name }}</td>
+<td class="n">{{ a.balance|money if a.balance > 0 }}</td><td class="n">{{ (-a.balance)|money if a.balance < 0 }}</td></tr>
+{% set ns.dr = ns.dr + (a.balance if a.balance > 0 else 0) %}{% set ns.cr = ns.cr + (-a.balance if a.balance < 0 else 0) %}{% endfor %}
+<tfoot><tr><td>Total</td><td class="n">{{ ns.dr|money }}</td><td class="n">{{ ns.cr|money }}</td></tr></tfoot></table></div>
+</div>
+{% endblock %}

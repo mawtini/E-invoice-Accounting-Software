@@ -1,0 +1,63 @@
+{% extends "base.html" %}{% from "_macros.html" import status, post %}
+{% block content %}
+<h1>{{ codes.DOC_TYPES[doc.doc_type] }} {{ doc.number }} {{ status(doc.status) }}{% if doc.paid %} <span class="badge paid">paid</span>{% endif %}</h1>
+<div class="actions">
+{% if doc.status in ('draft','invalid') %}
+  {{ post(url_for('document_submit', did=doc.id), 'Submit to LHDN MyInvois', 'btn') }}
+  <a class="btn sec" href="{{ url_for('document_form', did=doc.id) }}">Edit</a>
+  {{ post(url_for('document_delete', did=doc.id), 'Delete', 'btn sec', 'Delete this draft?') }}
+{% endif %}
+{% if doc.status == 'submitted' %}{{ post(url_for('document_refresh', did=doc.id), 'Refresh LHDN status', 'btn') }}{% endif %}
+{% if doc.status == 'valid' %}
+  {{ post(url_for('document_refresh', did=doc.id), 'Re-check status') }}
+  {% if doc.doc_type == '01' and not doc.paid %}{{ post(url_for('document_paid', did=doc.id), 'Record payment received') }}{% endif %}
+  {% if doc.doc_type in ('01','03') %}
+  <a class="btn sec sm" href="{{ url_for('document_form', type='02', ref=doc.id) }}">Credit note</a>
+  <a class="btn sec sm" href="{{ url_for('document_form', type='03', ref=doc.id) }}">Debit note</a>
+  <a class="btn sec sm" href="{{ url_for('document_form', type='04', ref=doc.id) }}">Refund note</a>
+  {% elif doc.doc_type == '11' %}
+  <a class="btn sec sm" href="{{ url_for('document_form', type='12', ref=doc.id) }}">Self-billed credit note</a>
+  <a class="btn sec sm" href="{{ url_for('document_form', type='13', ref=doc.id) }}">Self-billed debit note</a>
+  {% endif %}
+{% endif %}
+<a class="btn sec sm" href="{{ url_for('document_print', did=doc.id) }}">Print / PDF</a>
+<a class="btn sec sm" href="{{ url_for('document_json', did=doc.id) }}" target="_blank">{{ 'Submitted' if doc.submitted_json else 'Preview' }} UBL JSON</a>
+</div>
+
+{% if errors %}<div class="flash error"><b>Validation errors</b><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+<div class="split">
+<div class="card"><h2 style="margin-top:0">{{ 'Supplier' if doc.doc_type in codes.SELF_BILLED_TYPES else 'Buyer' }}</h2>
+<b>{{ party.name }}</b><br>TIN <span class="mono">{{ party.tin }}</span> · {{ party.id_type }} {{ party.id_value }}<br>
+SST {{ party.sst_no }}<br>{{ party.addr1 }} {{ party.addr2 or '' }}, {{ party.postcode or '' }} {{ party.city }}<br>
+{{ codes.STATES.get(party.state_code) }} · {{ party.country_code }}<br>{{ party.phone }} {{ party.email or '' }}</div>
+<div class="card"><h2 style="margin-top:0">MyInvois</h2>
+<table>
+<tr><td class="muted">UUID</td><td class="mono">{{ doc.lhdn_uuid or '-' }}</td></tr>
+<tr><td class="muted">Submission UID</td><td class="mono">{{ doc.lhdn_submission_uid or '-' }}</td></tr>
+<tr><td class="muted">Long ID</td><td class="mono">{{ doc.lhdn_long_id or '-' }}</td></tr>
+<tr><td class="muted">Validated</td><td>{{ doc.lhdn_validated_at or '-' }}</td></tr>
+<tr><td class="muted">Validation link</td><td class="mono">{% if vurl %}<a href="{{ vurl }}" target="_blank">{{ vurl }}</a>{% else %}-{% endif %}</td></tr>
+{% if ref %}<tr><td class="muted">Original document</td><td><a href="{{ url_for('document_view', did=ref.id) }}">{{ ref.number }}</a> <span class="mono">{{ ref.lhdn_uuid }}</span></td></tr>{% endif %}
+</table></div></div>
+
+<table><tr><th>#</th><th>Class.</th><th>Description</th><th class="n">Qty</th><th class="n">Unit price</th><th class="n">Discount</th>
+<th>Tax</th><th class="n">Net</th><th class="n">Tax amt</th><th class="n">Total</th></tr>
+{% for l in lines %}<tr><td>{{ l.line_no }}</td><td>{{ l.classification }}</td><td>{{ l.description }}</td><td class="n">{{ l.qty }} {{ l.unit_code }}</td>
+<td class="n">{{ l.unit_price|money }}</td><td class="n">{{ l.discount|money }}</td><td>{{ l.tax_type }} {{ l.tax_rate }}%</td>
+<td class="n">{{ l.net|money }}</td><td class="n">{{ l.tax|money }}</td><td class="n">{{ l.total|money }}</td></tr>{% endfor %}
+<tfoot><tr><td colspan="7" class="n">{{ doc.currency }}{% if doc.currency != 'MYR' %} (rate {{ doc.exchange_rate }}){% endif %}</td>
+<td class="n">{{ doc.subtotal|money }}</td><td class="n">{{ doc.tax_total|money }}</td><td class="n">{{ doc.total|money }}</td></tr></tfoot></table>
+
+{% if receipts %}<h2>Receipts consolidated</h2><table><tr><th>Receipt</th><th>Date</th><th class="n">Amount</th></tr>
+{% for r in receipts %}<tr><td>{{ r.number }}</td><td>{{ r.date }}</td><td class="n">{{ r.amount|money }}</td></tr>{% endfor %}</table>{% endif %}
+{% if children %}<h2>Related notes</h2><ul>{% for c in children %}<li><a href="{{ url_for('document_view', did=c.id) }}">{{ c.number }}</a> {{ codes.DOC_TYPES[c.doc_type] }} {{ status(c.status) }}</li>{% endfor %}</ul>{% endif %}
+
+{% if doc.status == 'valid' %}
+<div class="card"><h2 style="margin-top:0">Cancel on MyInvois</h2>
+<p class="muted">Allowed within 72 hours of validation. After that, issue a credit note instead.</p>
+<form method="post" action="{{ url_for('document_cancel', did=doc.id) }}" class="actions" onsubmit="return confirm('Cancel this e-Invoice on MyInvois?')">
+<input name="reason" placeholder="Reason for cancellation" required style="max-width:400px"><button class="btn danger">Cancel e-Invoice</button></form></div>
+{% endif %}
+{% if doc.notes %}<p class="muted">Notes: {{ doc.notes }}</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><title>{{ doc.number }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>body{background:#fff}main{max-width:850px}.hdr{display:flex;justify-content:space-between;gap:20px}.qr svg{width:130px;height:130px}
+.box{border:1px solid var(--line);padding:10px;border-radius:6px}</style></head><body><main>
+<div class="actions noprint"><button class="btn" onclick="print()">Print / Save as PDF</button><a class="btn sec" href="{{ url_for('document_view', did=doc.id) }}">Back</a></div>
+{% if doc.status != 'valid' %}<div class="note">Not validated by LHDN — this is not a valid e-Invoice ({{ doc.status }}).</div>{% endif %}
+<div class="hdr">
+<div><h1 style="margin:0">{{ codes.DOC_TYPES[doc.doc_type] }}</h1>
+<div>No. <b>{{ doc.number }}</b> · Date {{ doc.issue_date }}{% if doc.period_start %} · Period {{ doc.period_start }} – {{ doc.period_end }}{% endif %}</div>
+{% if ref %}<div>Original: {{ ref.number }} (UUID {{ ref.lhdn_uuid }})</div>{% endif %}
+<div class="mono">UUID: {{ doc.lhdn_uuid or '-' }}</div>
+<div>Validated: {{ doc.lhdn_validated_at or '-' }}</div></div>
+<div class="qr">{{ qr_svg or '' }}</div></div>
+<div class="split" style="margin-top:14px">
+{% for title, p in [('Supplier', supplier), ('Buyer', buyer)] %}
+<div class="box"><b>{{ title }}</b><br>{{ p.name }}<br>TIN {{ p.tin }} · {{ p.id_type }} {{ p.id_value }}<br>SST {{ p.sst_no or 'NA' }}
+{% if title == 'Supplier' %}<br>MSIC {{ p.msic }} {{ p.activity }}{% endif %}
+<br>{{ p.addr1 }} {{ p.addr2 or '' }} {{ p.postcode or '' }} {{ p.city }}, {{ codes.STATES.get(p.state_code, '') }}<br>{{ p.phone }} {{ p.email or '' }}</div>
+{% endfor %}</div>
+<table style="margin-top:14px"><tr><th>Class.</th><th>Description</th><th class="n">Qty</th><th class="n">Unit price</th><th class="n">Disc.</th><th>Tax</th><th class="n">Tax amt</th><th class="n">Amount</th></tr>
+{% for l in lines %}<tr><td>{{ l.classification }}</td><td>{{ l.description }}</td><td class="n">{{ l.qty }} {{ l.unit_code }}</td><td class="n">{{ l.unit_price|money }}</td>
+<td class="n">{{ l.discount|money }}</td><td>{{ codes.TAX_TYPES[l.tax_type] }} {{ l.tax_rate }}%</td><td class="n">{{ l.tax|money }}</td><td class="n">{{ l.net|money }}</td></tr>{% endfor %}
+<tfoot>
+<tr><td colspan="7" class="n">Total excluding tax</td><td class="n">{{ doc.subtotal|money }}</td></tr>
+<tr><td colspan="7" class="n">Tax</td><td class="n">{{ doc.tax_total|money }}</td></tr>
+<tr><td colspan="7" class="n">Total payable ({{ doc.currency }})</td><td class="n">{{ doc.total|money }}</td></tr></tfoot></table>
+{% if vurl %}<p class="muted mono">Verify: {{ vurl }}</p>{% endif %}
+<p class="muted">This document is a visual representation of an e-Invoice validated by LHDN MyInvois.</p>
+</main></body></html>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% from "_macros.html" import status, post %}
+{% block content %}
+<h1>Dashboard <span class="muted" style="font-size:14px">{{ settings.company_name }} · TIN {{ settings.company_tin }}</span></h1>
+{% if settings.lhdn_mode == 'mock' %}<div class="note">Running against the <b>offline MyInvois simulator</b>. Configure your
+LHDN sandbox Client ID/Secret in <a href="{{ url_for('settings_page') }}">Settings</a> to submit to the real preprod API.</div>{% endif %}
+<div class="stats">
+  <div class="stat"><div class="k">Validated sales ({{ month }})</div><div class="v">RM {{ stats.sales_month|money }}</div></div>
+  <div class="stat"><div class="k">Expenses ({{ month }})</div><div class="v">RM {{ stats.expenses_month|money }}</div></div>
+  <div class="stat"><div class="k">Accounts receivable</div><div class="v">RM {{ stats.receivable|money }}</div></div>
+  <div class="stat"><div class="k">Payroll gross ({{ month }})</div><div class="v">RM {{ stats.payroll_month|money }}</div></div>
+</div>
+<div class="actions">
+  <a class="btn" href="{{ url_for('document_form', type='01') }}">+ New e-Invoice</a>
+  <a class="btn sec" href="{{ url_for('expense_form') }}">+ Record expense</a>
+  <a class="btn sec" href="{{ url_for('payroll_runs') }}">Run payroll</a>
+  {{ post(url_for('demo_data'), 'Load demo master data') }}
+</div>
+<div class="card"><h2 style="margin-top:0">e-Invoice status</h2>
+{% for r in by_status %}{{ status(r.status) }} {{ r.n }} &nbsp; {% else %}<span class="muted">No documents yet</span>{% endfor %}</div>
+<h2>Recent documents</h2>
+<table><tr><th>No.</th><th>Type</th><th>Party</th><th>Date</th><th class="n">Total</th><th>Status</th></tr>
+{% for d in recent %}<tr><td><a href="{{ url_for('document_view', did=d.id) }}">{{ d.number }}</a></td>
+<td>{{ codes.DOC_TYPES[d.doc_type] }}</td><td>{{ d.party }}</td><td>{{ d.issue_date }}</td>
+<td class="n">{{ d.currency }} {{ d.total|money }}</td><td>{{ status(d.status) }}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">Nothing yet</td></tr>{% endfor %}</table>
+{% endblock %}

@@ -1,0 +1,5 @@
+flask>=3.0
+requests>=2.31
+cryptography>=42
+qrcode>=7.4
+pytest>=8

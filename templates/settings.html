@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% from "_macros.html" import field, post %}
+{% block content %}
+{% set s = settings %}
+<h1>Settings</h1>
+<form method="post" enctype="multipart/form-data">
+<div class="card"><h2 style="margin-top:0">Company (supplier details on e-Invoices)</h2><div class="grid">
+{{ field('company_name', 'Registered name', s.company_name, required=True, cls='wide') }}
+{{ field('company_tin', 'TIN', s.company_tin, required=True) }}
+{{ field('company_id_type', 'ID type', s.company_id_type, options=codes.ID_TYPES|kv) }}
+{{ field('company_brn', 'BRN / ID no.', s.company_brn, required=True) }}
+{{ field('company_sst', 'SST no.', s.company_sst) }}{{ field('company_ttx', 'Tourism tax no.', s.company_ttx) }}
+{{ field('company_msic', 'MSIC code', s.company_msic, required=True) }}{{ field('company_activity', 'Business activity description', s.company_activity, required=True) }}
+{{ field('company_email', 'Email', s.company_email) }}{{ field('company_phone', 'Phone', s.company_phone, required=True) }}
+{{ field('company_addr1', 'Address line 1', s.company_addr1, cls='wide') }}{{ field('company_addr2', 'Address line 2', s.company_addr2) }}
+{{ field('company_addr3', 'Address line 3', s.company_addr3) }}{{ field('company_city', 'City', s.company_city) }}
+{{ field('company_postcode', 'Postcode', s.company_postcode) }}{{ field('company_state', 'State', s.company_state, options=codes.STATES|kv) }}
+{{ field('company_country', 'Country', s.company_country) }}{{ field('company_bank_account', 'Bank account (printed as payee account)', s.company_bank_account) }}
+</div></div>
+<div class="card"><h2 style="margin-top:0">LHDN MyInvois API</h2>
+<p class="muted">Register an ERP system in the MyInvois portal (Taxpayer profile → Representatives / ERP) to obtain the Client ID and
+secret. Use <b>sandbox</b> (preprod-api.myinvois.hasil.gov.my) for testing.</p><div class="grid">
+{{ field('lhdn_mode', 'Environment', s.lhdn_mode, options=[('mock','Offline simulator'),('sandbox','Sandbox (preprod)'),('production','Production')]) }}
+{{ field('lhdn_client_id', 'Client ID', s.lhdn_client_id) }}
+{{ field('lhdn_client_secret', 'Client secret' + (' (saved - leave blank to keep)' if s.lhdn_client_secret else ''), '', type='password') }}
+{{ field('lhdn_onbehalfof', 'On behalf of TIN (intermediaries only)', s.lhdn_onbehalfof) }}
+{{ field('lhdn_doc_version', 'Document version', s.lhdn_doc_version, options=[('1.0','1.0 - no digital signature'),('1.1','1.1 - digitally signed')]) }}
+</div></div>
+<div class="card"><h2 style="margin-top:0">Digital signature (v1.1)</h2><div class="grid">
+<div><label>Upload signing certificate (.p12 / .pfx)</label><input type="file" name="cert_file" accept=".p12,.pfx"></div>
+{{ field('lhdn_cert_password', 'Certificate password', s.lhdn_cert_password, type='password') }}
+<div><label>Current certificate</label><div class="mono">{{ s.lhdn_cert_path or 'none' }}</div></div>
+</div></div>
+<div class="card"><h2 style="margin-top:0">Numbering</h2><div class="grid">
+{{ field('invoice_prefix', 'Invoice prefix', s.invoice_prefix) }}{{ field('cn_prefix', 'Credit note prefix', s.cn_prefix) }}
+{{ field('dn_prefix', 'Debit note prefix', s.dn_prefix) }}{{ field('rn_prefix', 'Refund note prefix', s.rn_prefix) }}
+{{ field('sb_prefix', 'Self-billed prefix', s.sb_prefix) }}</div></div>
+<div class="actions"><button class="btn">Save settings</button></div>
+</form>
+<div class="card">{{ post(url_for('settings_demo_cert'), 'Generate self-signed demo certificate (simulator only)') }}</div>
+{% endblock %}

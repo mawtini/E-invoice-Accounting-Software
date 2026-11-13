@@ -1,0 +1,18 @@
+{% macro field(name, label, value='', type='text', options=None, required=False, cls='', attrs='') -%}
+<div class="{{ cls }}"><label for="{{ name }}">{{ label }}{% if required %} *{% endif %}</label>
+{%- if options is not none %}
+<select name="{{ name }}" id="{{ name }}" {{ attrs|safe }} {% if required %}required{% endif %}>
+{%- for k, v in options %}<option value="{{ k }}" {% if (value|string) == (k|string) %}selected{% endif %}>{{ v }}</option>{% endfor %}
+</select>
+{%- elif type == 'textarea' %}<textarea name="{{ name }}" id="{{ name }}" rows="2" {{ attrs|safe }}>{{ value or '' }}</textarea>
+{%- else %}<input type="{{ type }}" name="{{ name }}" id="{{ name }}" value="{{ value if value is not none else '' }}" {% if type=='number' %}step="any"{% endif %} {% if required %}required{% endif %} {{ attrs|safe }}>
+{%- endif %}</div>
+{%- endmacro %}
+
+
+{% macro status(s) %}<span class="badge {{ s }}">{{ s }}</span>{% endmacro %}
+
+{% macro post(action, label, cls='btn sec sm', confirm=None) -%}
+<form method="post" action="{{ action }}" style="display:inline" {% if confirm %}onsubmit="return confirm('{{ confirm }}')"{% endif %}>
+<button class="{{ cls }}">{{ label }}</button></form>
+{%- endmacro %}

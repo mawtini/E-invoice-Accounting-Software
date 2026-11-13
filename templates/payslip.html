@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions"><button class="btn" onclick="print()">Print</button><a class="btn sec" href="{{ url_for('payroll_run', rid=run.id) }}">Back</a></div>
+<div class="card" style="max-width:700px">
+<h1 style="margin-top:0">Payslip — {{ run.period }}</h1>
+<p><b>{{ settings.company_name }}</b><br>{{ s.name }} ({{ s.emp_no }}) · NRIC {{ s.nric }}<br>EPF {{ s.epf_no }} · SOCSO {{ s.socso_no }} · Tax {{ s.tax_no or '-' }}</p>
+<div class="split"><table><tr><th>Earnings</th><th class="n">RM</th></tr>
+<tr><td>Basic</td><td class="n">{{ s.basic|money }}</td></tr><tr><td>Allowance</td><td class="n">{{ s.allowance|money }}</td></tr>
+<tr><td>Overtime</td><td class="n">{{ s.overtime|money }}</td></tr><tr><td>Bonus</td><td class="n">{{ s.bonus|money }}</td></tr>
+<tfoot><tr><td>Gross</td><td class="n">{{ s.gross|money }}</td></tr></tfoot></table>
+<table><tr><th>Deductions</th><th class="n">RM</th></tr>
+<tr><td>EPF</td><td class="n">{{ s.epf_ee|money }}</td></tr><tr><td>SOCSO</td><td class="n">{{ s.socso_ee|money }}</td></tr>
+<tr><td>EIS</td><td class="n">{{ s.eis_ee|money }}</td></tr><tr><td>PCB / MTD</td><td class="n">{{ s.pcb|money }}</td></tr>
+<tr><td>Other</td><td class="n">{{ s.other_deduction|money }}</td></tr>
+<tfoot><tr><td>Net pay</td><td class="n">{{ s.net|money }}</td></tr></tfoot></table></div>
+<p class="muted">Employer contributions: EPF RM {{ s.epf_er|money }} · SOCSO RM {{ s.socso_er|money }} · EIS RM {{ s.eis_er|money }}</p>
+</div>
+{% endblock %}

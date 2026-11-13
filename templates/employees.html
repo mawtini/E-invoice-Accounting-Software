@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Employees</h1>
+<div class="actions"><a class="btn" href="{{ url_for('employee_form') }}">+ New employee</a></div>
+<table><tr><th>No.</th><th>Name</th><th>NRIC / Passport</th><th>Residency</th><th>EPF no.</th><th>SOCSO no.</th><th class="n">Basic</th><th class="n">Allowance</th><th class="n">PCB</th><th>Active</th></tr>
+{% for e in rows %}<tr><td>{{ e.emp_no }}</td><td><a href="{{ url_for('employee_form', eid=e.id) }}">{{ e.name }}</a></td><td>{{ e.nric }}</td>
+<td>{{ e.residency }}</td><td>{{ e.epf_no }}</td><td>{{ e.socso_no }}</td><td class="n">{{ e.basic_salary|money }}</td>
+<td class="n">{{ e.fixed_allowance|money }}</td><td class="n">{{ e.pcb_monthly|money }}</td><td>{{ 'yes' if e.active else 'no' }}</td></tr>
+{% else %}<tr><td colspan="10" class="muted">No employees</td></tr>{% endfor %}</table>
+{% endblock %}

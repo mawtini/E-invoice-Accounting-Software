@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% from "_macros.html" import status, post %}
+{% block content %}
+<h1>Payroll {{ run.period }} {{ status(run.status) }}</h1>
+<div class="actions">
+{% if run.status == 'draft' %}{{ post(url_for('payroll_post', rid=run.id), 'Post to ledger', 'btn') }}{{ post(url_for('payroll_delete', rid=run.id), 'Delete run', 'btn sec', 'Delete?') }}
+{% else %}
+{% for k, label in [('SAL','Pay salaries'),('EPF','Pay EPF'),('SOCSO','Pay SOCSO'),('EIS','Pay EIS'),('PCB','Pay PCB')] %}
+{% if k in stat_paid %}<span class="badge paid">{{ k }} paid</span>{% else %}{{ post(url_for('payroll_pay', rid=run.id, kind=k), label) }}{% endif %}
+{% endfor %}{% endif %}
+<a class="btn sec sm" href="{{ url_for('payroll_export', rid=run.id, kind='epf') }}">EPF (Borang A) CSV</a>
+<a class="btn sec sm" href="{{ url_for('payroll_export', rid=run.id, kind='socso') }}">SOCSO+EIS (8A) CSV</a>
+<a class="btn sec sm" href="{{ url_for('payroll_export', rid=run.id, kind='pcb') }}">PCB (CP39) CSV</a>
+<a class="btn sec sm" href="{{ url_for('payroll_export', rid=run.id, kind='bank') }}">Bank file CSV</a>
+</div>
+<form method="post">
+<div class="lines"><table><tr><th>Employee</th><th class="n">Basic</th><th class="n">Allow.</th><th class="n">OT</th><th class="n">Bonus</th><th class="n">Gross</th>
+<th class="n">EPF ee</th><th class="n">EPF er</th><th class="n">SOCSO ee</th><th class="n">SOCSO er</th><th class="n">EIS ee</th><th class="n">EIS er</th>
+<th class="n">PCB</th><th class="n">Other ded.</th><th class="n">Net</th></tr>
+{% for s in slips %}<tr><td><a href="{{ url_for('payslip', sid=s.id) }}">{{ s.emp_no }} {{ s.name }}</a><br><span class="muted">{{ s.residency }}</span></td>
+<td class="n">{{ s.basic|money }}</td><td class="n">{{ s.allowance|money }}</td>
+{% if run.status == 'draft' %}
+<td><input name="ot_{{ s.id }}" type="number" step="any" value="{{ s.overtime }}" style="width:80px"></td>
+<td><input name="bonus_{{ s.id }}" type="number" step="any" value="{{ s.bonus }}" style="width:80px"></td>
+{% else %}<td class="n">{{ s.overtime|money }}</td><td class="n">{{ s.bonus|money }}</td>{% endif %}
+<td class="n">{{ s.gross|money }}</td><td class="n">{{ s.epf_ee|money }}</td><td class="n">{{ s.epf_er|money }}</td>
+<td class="n">{{ s.socso_ee|money }}</td><td class="n">{{ s.socso_er|money }}</td><td class="n">{{ s.eis_ee|money }}</td><td class="n">{{ s.eis_er|money }}</td>
+<td class="n">{{ s.pcb|money }}</td>
+{% if run.status == 'draft' %}<td><input name="ded_{{ s.id }}" type="number" step="any" value="{{ s.other_deduction }}" style="width:80px"></td>
+{% else %}<td class="n">{{ s.other_deduction|money }}</td>{% endif %}
+<td class="n"><b>{{ s.net|money }}</b></td></tr>{% endfor %}
+<tfoot><tr><td>Total</td>{% for k in ['basic','allowance','overtime','bonus','gross','epf_ee','epf_er','socso_ee','socso_er','eis_ee','eis_er','pcb','other_deduction','net'] %}<td class="n">{{ totals[k]|money }}</td>{% endfor %}</tr></tfoot>
+</table></div>
+{% if run.status == 'draft' %}<div class="actions"><button class="btn sec">Recalculate with OT / bonus / deductions</button></div>{% endif %}
+</form>
+<div class="card"><b>Employer cost:</b> RM {{ (totals.gross + totals.epf_er + totals.socso_er + totals.eis_er)|money }} ·
+<b>Remit to KWSP:</b> RM {{ (totals.epf_ee + totals.epf_er)|money }} · <b>PERKESO (SOCSO+EIS):</b> RM {{ (totals.socso_ee + totals.socso_er + totals.eis_ee + totals.eis_er)|money }} ·
+<b>LHDN (PCB):</b> RM {{ totals.pcb|money }} — due by the 15th of the following month.</div>
+{% endblock %}

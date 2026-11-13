@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block content %}
+{% set r = row or {} %}
+<h1>{{ 'Edit' if r.id else 'New' }} customer / supplier</h1>
+<form method="post" class="card">
+<div class="grid">
+{{ field('kind', 'Kind', r.kind or 'customer', options=[('customer','Customer'),('supplier','Supplier'),('both','Both')]) }}
+{{ field('name', 'Registered name', r.name, required=True, cls='wide') }}
+{{ field('tin', 'Tax Identification No. (TIN)', r.tin, required=True, attrs='placeholder="C12345678901 / IG... / EI00000000010"') }}
+{{ field('id_type', 'ID type', r.id_type or 'BRN', options=codes.ID_TYPES|kv) }}
+{{ field('id_value', 'BRN / NRIC / Passport no.', r.id_value, attrs='placeholder="NA if not applicable"') }}
+{{ field('sst_no', 'SST registration no.', r.sst_no or 'NA') }}
+{{ field('ttx_no', 'Tourism tax no.', r.ttx_no or 'NA') }}
+{{ field('msic', 'MSIC code (suppliers)', r.msic or '00000') }}
+{{ field('activity', 'Business activity (suppliers)', r.activity or 'NOT APPLICABLE') }}
+{{ field('email', 'Email', r.email) }}
+{{ field('phone', 'Contact number', r.phone) }}
+{{ field('addr1', 'Address line 1', r.addr1, cls='wide') }}
+{{ field('addr2', 'Address line 2', r.addr2) }}
+{{ field('addr3', 'Address line 3', r.addr3) }}
+{{ field('city', 'City', r.city) }}
+{{ field('postcode', 'Postcode', r.postcode) }}
+{{ field('state_code', 'State', r.state_code or '14', options=codes.STATES|kv) }}
+{{ field('country_code', 'Country (ISO 3166-1 alpha-3)', r.country_code or 'MYS') }}
+</div>
+<p class="muted">Generic TINs: EI00000000010 general public · EI00000000020 foreign buyer · EI00000000030 foreign supplier · EI00000000040 government.</p>
+<div class="actions"><button class="btn">Save</button><a class="btn sec" href="{{ url_for('parties') }}">Cancel</a></div>
+</form>
+{% endblock %}
